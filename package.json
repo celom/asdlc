@@ -7,7 +7,8 @@
     "format:check": "prettier --check .",
     "typecheck": "nx run-many -t typecheck",
     "test": "nx run-many -t test",
-    "build": "nx run-many -t build"
+    "build": "nx run-many -t build",
+    "verify": "bun run format:check && bun run typecheck && bun run test && bun run build"
   },
   "private": true,
   "dependencies": {
