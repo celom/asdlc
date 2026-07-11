@@ -29,9 +29,11 @@ structured entry points.
 The pipeline needs something to produce. Drive one small, deliberately boring package
 through the full loop **manually first**, so each step is understood before it is automated.
 
-- [ ] Create a first package in `packages/` with unit tests
-- [ ] Exercise the loop end to end: issue → spec → task → implementation → tests → PR → CI → merge
-- [ ] Document friction found in each step (this feeds Phase 2 automation choices)
+- [x] Create a first package in `packages/` with unit tests (`packages/tictactoe`, #3)
+- [x] Exercise the loop end to end: issue → spec → task → implementation → tests → PR → CI → merge
+      (spec #1 → task #2 → PR #3)
+- [x] Document friction found in each step (this feeds Phase 2 automation choices):
+      [docs/phase-1-friction.md](./docs/phase-1-friction.md)
 
 ## Phase 2 — Agents in the loop
 

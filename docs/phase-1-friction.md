@@ -52,4 +52,16 @@ the friction found in each step, as input for Phase 2 automation choices.
 
 ## PR → CI → merge
 
-- (filled in after merge — see wrap-up commit)
+- Same template gap as issues: `gh pr create --body` does not apply
+  `pull_request_template.md`; the structure was reproduced by hand. Any non-web entry
+  point (CLI, agent) relies on convention for the template contract.
+- The local agent harness blocks `git push` (a deliberate guardrail), so the human
+  performed the push and the agent resumed from there. Phase 2 must decide where pushes
+  originate — a bot identity in CI, or a human gate like this one.
+- CI passed in 18s; squash-merge went through cleanly under branch protection
+  (0 approvals required while single-maintainer).
+- `Closes #2` auto-closed the task issue, but nothing connects task completion back to
+  the parent spec — the spec (#1) had to be closed manually. Spec lifecycle tracking is
+  a candidate for automation.
+- Acceptance criteria were now hand-copied for the third time (spec → task → PR).
+  Confirmed as the most mechanical, automatable duplication in the loop.
