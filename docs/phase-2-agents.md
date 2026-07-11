@@ -99,8 +99,13 @@ gh api -X POST   repos/celom/asdlc/branches/main/protection/enforce_admins  # re
 ## Cost controls
 
 - `agent-implement.yml`: `--max-turns 40` caps the implement run; tune after real runs.
-- `agent-review.yml`: `--max-turns 5`, plus per-PR concurrency-cancel so rapid pushes
+- `agent-review.yml`: `--max-turns 25`, plus per-PR concurrency-cancel so rapid pushes
   don't pay for stale reviews.
+- Both workflows pass an explicit `--allowedTools` list — custom prompts run
+  default-deny, so every tool must be allowlisted. Keep the lists minimal: the
+  reviewer gets read + comment tools only; the implementer's Bash is scoped to
+  bun/git/gh so an injected issue body can't run arbitrary commands against the
+  runner's secrets.
 - There is no monthly cap; run-cost metrics are a Phase 3 item.
 
 ## Known limitations
