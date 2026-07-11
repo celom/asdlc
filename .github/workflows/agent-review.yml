@@ -15,12 +15,18 @@ jobs:
     permissions:
       contents: read # read-only: the reviewer must never be able to push
       pull-requests: write
+      issues: write # PR summary comments go through the issues API
     steps:
       - uses: actions/checkout@v4
 
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Explicit token: without it the action tries an OIDC exchange that
+          # requires the official Claude GitHub App, which this repo doesn't use.
+          # The default GITHUB_TOKEN is right here — review comments don't need
+          # to trigger CI, and it keeps the reviewer on the least-privileged token.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Perform a first-pass review of PR #${{ github.event.pull_request.number }}.
 
