@@ -15,11 +15,14 @@ vibe-coding debt curve.
 GitHub is the platform of record. Nothing agentic can run until the repo has gates and
 structured entry points.
 
-- [x] GitHub repo created and pushed (`celom/asdlc`)
-- [ ] CI workflow: format check, typecheck, test, build on every push/PR
-- [ ] PR template: linked issue, acceptance criteria, verification evidence, AI disclosure
-- [ ] Issue templates encoding the spec-driven flow: spec → task, plus bug reports
-- [ ] Labels for the workflow (`spec`, `task`)
+- [x] GitHub repo created and pushed (`celom/asdlc`, public)
+- [x] CI workflow: format check, typecheck, test, build on every push/PR
+- [x] PR template: linked issue, acceptance criteria, verification evidence, AI disclosure
+- [x] Issue templates encoding the spec-driven flow: spec → task, plus bug reports
+- [x] Labels for the workflow (`spec`, `task`)
+- [x] Branch protection on `main`: PRs required, CI check must pass, no force pushes
+      (approvals set to 0 while the repo is single-maintainer; admins may still push
+      directly until the loop moves fully to PRs)
 
 ## Phase 1 — A target to build
 
@@ -36,7 +39,8 @@ Wire agents into the platform, with humans as the final gate.
 
 - [ ] Claude Code GitHub Action: an issue labeled `agent:implement` produces a PR
 - [ ] AI first-pass review workflow on PRs (bugs, security, style) before human review
-- [ ] Branch protection: CI green + human approval required to merge
+- [ ] Tighten branch protection: require an approving review and enforce for admins,
+      once the review flow (human + AI first-pass) exists
 
 ## Phase 3 — Feedback and observability
 
