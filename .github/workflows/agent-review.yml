@@ -41,7 +41,11 @@ jobs:
             issue, verification evidence (not just "looks right"), and the AI
             disclosure section. Flag any missing part explicitly.
 
-            Post inline comments where relevant plus one summary comment.
+            Post inline comments where relevant plus one summary comment. If a
+            previous run of yours already posted a summary comment on this PR,
+            update it with `gh pr comment ${{ github.event.pull_request.number }} --edit-last --body ...`
+            instead of posting a new one, so the PR carries a single living
+            review summary rather than one per push.
             Do NOT approve or request changes — the human is the approval gate.
           # Custom prompts run default-deny: every tool the reviewer needs must
           # be allowlisted, and nothing else — no push, no approve.

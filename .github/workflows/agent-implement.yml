@@ -4,6 +4,12 @@ on:
   issues:
     types: [labeled]
 
+# One run per issue: re-labeling while a run is in flight must not race it
+# into duplicate branches/PRs (each run is also billed).
+concurrency:
+  group: agent-implement-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   implement:
     if: github.event.label.name == 'agent:implement'
@@ -57,5 +63,5 @@ jobs:
           # control that actually gates untrusted input is the trigger: adding
           # the agent:implement label requires triage/write access to the repo.
           claude_args: |
-            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(bun run:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
+            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
             --max-turns 40
