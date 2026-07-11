@@ -2,7 +2,13 @@
   "name": "@asdlc/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "nx run-many -t typecheck",
+    "test": "nx run-many -t test",
+    "build": "nx run-many -t build"
+  },
   "private": true,
   "dependencies": {},
   "devDependencies": {

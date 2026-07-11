@@ -1,0 +1,25 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: '[Bug] '
+labels: [bug]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that trigger the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error output or logs where relevant.
+    validations:
+      required: true

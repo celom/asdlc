@@ -1,0 +1,36 @@
+name: Task
+description: A small, verifiable unit of implementation work derived from a spec.
+title: '[Task] '
+labels: [task]
+body:
+  - type: input
+    id: parent-spec
+    attributes:
+      label: Parent spec
+      description: Link to the spec issue this task implements.
+      placeholder: '#1'
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What to implement. Precise enough that an agent could execute it without ambiguity.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Verifiable statements that define "done" for this task specifically.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: How completion will be proven — tests to write, commands to run, behavior to observe.
+    validations:
+      required: true
