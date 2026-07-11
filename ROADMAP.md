@@ -38,7 +38,8 @@ through the full loop **manually first**, so each step is understood before it i
 ## Phase 2 — Agents in the loop
 
 Wire agents into the platform, with humans as the final gate. Operator manual (setup,
-loop, cost controls): [docs/phase-2-agents.md](./docs/phase-2-agents.md). Spec #4.
+loop, cost controls): [docs/phase-2-agents.md](./docs/phase-2-agents.md); friction log:
+[docs/phase-2-friction.md](./docs/phase-2-friction.md). Spec #4.
 
 - [x] Claude Code GitHub Action: an issue labeled `agent:implement` produces a PR
 - [x] AI first-pass review workflow on PRs (bugs, security, style) before human review
