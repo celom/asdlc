@@ -24,6 +24,10 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The action refuses non-human actors by default. Agent PRs are
+          # opened by our implement bot and MUST be reviewed — that's the
+          # point of the first-pass gate. Scoped to that one bot, not "*".
+          allowed_bots: 'asdlc-agent'
           # Explicit token: without it the action tries an OIDC exchange that
           # requires the official Claude GitHub App, which this repo doesn't use.
           # The default GITHUB_TOKEN is right here — review comments don't need
