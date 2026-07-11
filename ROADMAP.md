@@ -37,10 +37,11 @@ through the full loop **manually first**, so each step is understood before it i
 
 ## Phase 2 — Agents in the loop
 
-Wire agents into the platform, with humans as the final gate.
+Wire agents into the platform, with humans as the final gate. Operator manual (setup,
+loop, cost controls): [docs/phase-2-agents.md](./docs/phase-2-agents.md). Spec #4.
 
 - [ ] Claude Code GitHub Action: an issue labeled `agent:implement` produces a PR
-- [ ] AI first-pass review workflow on PRs (bugs, security, style) before human review
+- [x] AI first-pass review workflow on PRs (bugs, security, style) before human review
 - [ ] Tighten branch protection: require an approving review and enforce for admins,
       once the review flow (human + AI first-pass) exists
 

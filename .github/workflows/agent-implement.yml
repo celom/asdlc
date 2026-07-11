@@ -1,0 +1,67 @@
+name: Agent Implement
+
+on:
+  issues:
+    types: [labeled]
+
+# One run per issue: re-labeling while a run is in flight must not race it
+# into duplicate branches/PRs (each run is also billed).
+concurrency:
+  group: agent-implement-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    if: github.event.label.name == 'agent:implement'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      # A custom GitHub App token (not GITHUB_TOKEN) so the agent's pushes come
+      # from a bot identity and its PRs still trigger CI. See docs/phase-2-agents.md.
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            Implement issue #${{ github.event.issue.number }} in this repository.
+
+            1. Read the issue with `gh issue view ${{ github.event.issue.number }}`.
+               Its acceptance criteria are the contract. If it links a parent
+               spec, read that too.
+            2. Create a branch named agent/issue-${{ github.event.issue.number }}-<slug>.
+            3. Implement the change with tests, following existing patterns.
+            4. Verify before pushing:
+               bun install --frozen-lockfile && bun run format:check && bun run typecheck && bun run test && bun run build
+            5. Open a PR whose body follows .github/pull_request_template.md exactly:
+               - "Closes #${{ github.event.issue.number }}" in the linked issue section.
+               - Copy the acceptance criteria from the issue verbatim as checkboxes
+                 and check the ones this PR satisfies.
+               - Include verification evidence (real command output, not "looks right").
+               - AI disclosure: check "AI-generated"; leave "reviewed by a human"
+                 unchecked — the human reviewer checks it.
+            6. Comment on the issue with a link to the PR.
+          # Custom prompts run default-deny: allowlist what implementation needs.
+          # Note the Bash scoping is hygiene, not a sandbox — running the
+          # toolchain (bun) is arbitrary code execution by construction. The
+          # control that actually gates untrusted input is the trigger: adding
+          # the agent:implement label requires triage/write access to the repo.
+          claude_args: |
+            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
+            --max-turns 40
