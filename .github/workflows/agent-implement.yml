@@ -52,8 +52,10 @@ jobs:
                  unchecked — the human reviewer checks it.
             6. Comment on the issue with a link to the PR.
           # Custom prompts run default-deny: allowlist what implementation needs.
-          # Bash is scoped to bun/git/gh so an injected issue body can't use
-          # arbitrary commands to exfiltrate the runner's secrets.
+          # Note the Bash scoping is hygiene, not a sandbox — running the
+          # toolchain (bun) is arbitrary code execution by construction. The
+          # control that actually gates untrusted input is the trigger: adding
+          # the agent:implement label requires triage/write access to the repo.
           claude_args: |
-            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(bun run:*),Bash(bunx:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
+            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(bun run:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
             --max-turns 40

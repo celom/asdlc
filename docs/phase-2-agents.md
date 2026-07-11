@@ -104,16 +104,18 @@ gh api -X POST   repos/celom/asdlc/branches/main/protection/enforce_admins  # re
 - Both workflows pass an explicit `--allowedTools` list — custom prompts run
   default-deny, so every tool must be allowlisted. Keep the lists minimal: the
   reviewer gets read + comment tools only; the implementer's Bash is scoped to
-  bun/git/gh so an injected issue body can't run arbitrary commands against the
-  runner's secrets.
+  bun/git/gh. Note the implementer's scoping is hygiene, not a sandbox — running
+  the toolchain is arbitrary code execution by construction. The control that
+  gates untrusted input is the trigger: adding the `agent:implement` label
+  requires triage/write access.
 - There is no monthly cap; run-cost metrics are a Phase 3 item.
 
 ## Known limitations
 
 - **Fork PRs**: secrets are not available to `pull_request` runs from forks, so the
-  review workflow silently skips external contributions. Acceptable while
-  single-maintainer; revisit (`pull_request_target` with care) if outside
-  contributors appear.
+  review job explicitly skips them (`head.repo.fork == false` guard) rather than
+  failing on a missing API key. Acceptable while single-maintainer; revisit
+  (`pull_request_target` with care) if outside contributors appear.
 - **Issue-form validation is still web-only**: agents creating issues via `gh` follow
   the template by convention. The review workflow now enforces the contract on the PR
   side; an issue-body validator remains open (see the

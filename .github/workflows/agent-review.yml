@@ -2,7 +2,7 @@ name: Agent Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, ready_for_review, reopened]
 
 concurrency:
   group: agent-review-${{ github.event.pull_request.number }}
@@ -10,7 +10,9 @@ concurrency:
 
 jobs:
   review:
-    if: github.event.pull_request.draft == false
+    # Skip drafts, and skip fork PRs cleanly: forks don't receive secrets, so
+    # the run would fail on a missing API key rather than review anything.
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     permissions:
       contents: read # read-only: the reviewer must never be able to push
