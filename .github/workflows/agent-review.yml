@@ -1,0 +1,39 @@
+name: Agent Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: agent-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # read-only: the reviewer must never be able to push
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Perform a first-pass review of PR #${{ github.event.pull_request.number }}.
+
+            Review the diff for correctness bugs, security issues, and style
+            inconsistencies with the surrounding code. Prioritize real problems
+            over nitpicks.
+
+            Also verify the PR body honors .github/pull_request_template.md:
+            a linked issue ("Closes #N"), acceptance criteria copied from that
+            issue, verification evidence (not just "looks right"), and the AI
+            disclosure section. Flag any missing part explicitly.
+
+            Post inline comments where relevant plus one summary comment.
+            Do NOT approve or request changes — the human is the approval gate.
+          claude_args: |
+            --max-turns 5
