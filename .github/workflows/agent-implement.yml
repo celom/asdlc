@@ -62,6 +62,10 @@ jobs:
           # toolchain (bun) is arbitrary code execution by construction. The
           # control that actually gates untrusted input is the trigger: adding
           # the agent:implement label requires triage/write access to the repo.
+          # The turn cap and allowlist below were tuned from Phase 3 bring-up
+          # data (#16): the smallest task exhausted 40 turns amid permission
+          # denials, so the cap rose to 60 and common non-destructive utilities
+          # were added.
           claude_args: |
-            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*)"
-            --max-turns 40
+            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(bunx:*),Bash(node:*)"
+            --max-turns 60
