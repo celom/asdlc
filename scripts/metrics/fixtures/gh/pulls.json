@@ -1,0 +1,27 @@
+[
+  {
+    "number": 101,
+    "merged_at": "2026-07-05T12:00:00Z",
+    "user": { "login": "asdlc-agent[bot]" }
+  },
+  {
+    "number": 102,
+    "merged_at": "2026-07-06T12:00:00Z",
+    "user": { "login": "asdlc-agent[bot]" }
+  },
+  {
+    "number": 103,
+    "merged_at": "2026-07-07T12:00:00Z",
+    "user": { "login": "asdlc-agent[bot]" }
+  },
+  {
+    "number": 200,
+    "merged_at": "2026-07-08T12:00:00Z",
+    "user": { "login": "celom" }
+  },
+  {
+    "number": 201,
+    "merged_at": null,
+    "user": { "login": "asdlc-agent[bot]" }
+  }
+]
