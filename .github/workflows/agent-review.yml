@@ -21,7 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Needed to run the fail-soft metrics parser (TypeScript) in the post-step.
+      # This adds no permissions; the review job stays on contents: read.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - uses: anthropics/claude-code-action@v1
+        id: claude
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # The action refuses non-human actors by default. Agent PRs are
@@ -64,3 +71,40 @@ jobs:
           claude_args: |
             --allowedTools "Read,Grep,Glob,Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Bash(jq:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh issue view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment,mcp__github_comment__update_claude_comment"
             --max-turns 50
+
+      # Metrics post-step, mirroring agent-implement.yml. Fail-soft and
+      # if: always(), so an errored review still leaves a record. Uploading an
+      # artifact needs no write scope, so the review job keeps contents: read —
+      # the reviewer must never be able to push.
+      - name: Collect run metrics
+        if: always()
+        env:
+          METRICS_TRIGGER: ${{ github.event.pull_request.number }}
+        run: |
+          bun scripts/metrics/parse-execution.ts "${{ steps.claude.outputs.execution_file }}" > run-metrics.ndjson
+          {
+            echo "### Run metrics"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            jq -r '
+              "| workflow | \(.workflow) |",
+              "| trigger | \(.trigger) |",
+              "| conclusion | \(.conclusion) |",
+              "| cost_usd | \(.cost_usd) |",
+              "| num_turns | \(.num_turns) |",
+              "| duration_ms | \(.duration_ms) |"
+            ' run-metrics.ndjson
+            if [ "$(jq '.parse_warnings | length' run-metrics.ndjson)" != "0" ]; then
+              echo ""
+              echo "**Parse warnings**"
+              jq -r '.parse_warnings[] | "- \(.)"' run-metrics.ndjson
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload run metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-metrics
+          path: run-metrics.ndjson

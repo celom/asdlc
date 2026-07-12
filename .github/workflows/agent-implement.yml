@@ -36,6 +36,7 @@ jobs:
           bun-version: latest
 
       - uses: anthropics/claude-code-action@v1
+        id: claude
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ steps.app-token.outputs.token }}
@@ -69,3 +70,42 @@ jobs:
           claude_args: |
             --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(bunx:*),Bash(node:*)"
             --max-turns 60
+
+      # Metrics are observability, never a gate: this post-step is fail-soft and
+      # runs even when the agent step errored, so a run that delivers nothing
+      # still leaves a record. The parser exits 0 on any input (missing/malformed
+      # execution file → null metrics + parse_warnings), so nothing here fails the
+      # run. The record is uploaded as the `run-metrics` artifact; the
+      # workflow_run-triggered metrics-collect.yml appends it to metrics:runs.ndjson.
+      - name: Collect run metrics
+        if: always()
+        env:
+          METRICS_TRIGGER: ${{ github.event.issue.number }}
+        run: |
+          bun scripts/metrics/parse-execution.ts "${{ steps.claude.outputs.execution_file }}" > run-metrics.ndjson
+          {
+            echo "### Run metrics"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            jq -r '
+              "| workflow | \(.workflow) |",
+              "| trigger | \(.trigger) |",
+              "| conclusion | \(.conclusion) |",
+              "| cost_usd | \(.cost_usd) |",
+              "| num_turns | \(.num_turns) |",
+              "| duration_ms | \(.duration_ms) |"
+            ' run-metrics.ndjson
+            if [ "$(jq '.parse_warnings | length' run-metrics.ndjson)" != "0" ]; then
+              echo ""
+              echo "**Parse warnings**"
+              jq -r '.parse_warnings[] | "- \(.)"' run-metrics.ndjson
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload run metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-metrics
+          path: run-metrics.ndjson
