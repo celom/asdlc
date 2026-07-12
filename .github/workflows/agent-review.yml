@@ -51,8 +51,16 @@ jobs:
             instead of posting a new one, so the PR carries a single living
             review summary rather than one per push.
             Do NOT approve or request changes — the human is the approval gate.
+          # Surface the per-turn transcript so denial diagnosis is evidence-based
+          # instead of blind. The reviewer's context is public PR data on a
+          # read-only token; the transcript exposes no secrets.
+          show_full_output: true
           # Custom prompts run default-deny: every tool the reviewer needs must
-          # be allowlisted, and nothing else — no push, no approve.
+          # be allowlisted, and nothing else — no push, no approve. The Bash
+          # entries are read-only utilities (inspect, never mutate); nothing
+          # write-capable, network-facing, or repo-administrative is added.
+          # The cap and this allowlist were tuned from PR #26 bring-up data,
+          # where a marginal turn budget was half-burned on permission denials.
           claude_args: |
-            --allowedTools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment,mcp__github_comment__update_claude_comment"
-            --max-turns 25
+            --allowedTools "Read,Grep,Glob,Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Bash(jq:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh issue view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment,mcp__github_comment__update_claude_comment"
+            --max-turns 50
