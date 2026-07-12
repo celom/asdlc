@@ -1,0 +1,85 @@
+name: Metrics Collect
+
+# Appends one NDJSON record per completed agent run to metrics:runs.ndjson.
+# Runs on workflow_run so the append happens off the critical path of the agent
+# jobs and — crucially — with a token separate from the agents' own. This
+# workflow only runs from its definition on the default branch, so its
+# end-to-end behavior is verifiable only after merge (see #17 / parent #15).
+on:
+  workflow_run:
+    workflows: ['Agent Implement', 'Agent Review']
+    types: [completed]
+
+# Serialize appends: runs.ndjson is a single file on the metrics branch, so two
+# concurrent appenders would collide. cancel-in-progress: false means every run
+# gets its turn rather than being dropped — we must not lose a record.
+concurrency:
+  group: metrics-append
+  cancel-in-progress: false
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    permissions:
+      # Push to the unprotected metrics branch. A plain GITHUB_TOKEN is right
+      # here: pushes to metrics trigger nothing downstream, so no App token is
+      # needed. contents: write is the only elevated scope.
+      contents: write
+      # Read-only scope required to download an artifact from the triggering run
+      # (a different workflow run than this one).
+      actions: read
+    steps:
+      # The triggering run may have no run-metrics artifact (e.g. a review job
+      # that was skipped for a draft/fork PR). Tolerate that and exit cleanly:
+      # continue-on-error lets us branch on the outcome below instead of failing.
+      - name: Download run-metrics artifact
+        id: download
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: run-metrics
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: run-metrics
+
+      - name: Report missing artifact
+        if: steps.download.outcome != 'success'
+        run: echo "Triggering run has no run-metrics artifact; nothing to append."
+
+      - name: Checkout metrics branch
+        if: steps.download.outcome == 'success'
+        uses: actions/checkout@v4
+        with:
+          ref: metrics
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: metrics-branch
+
+      # Append the single record line and push, retrying under contention. Each
+      # attempt re-fetches the branch tip, rebases the append onto it (reset
+      # --hard + re-append, so exactly one line is added on top of the latest
+      # state), commits, and pushes. The concurrency group already serializes
+      # runs of this workflow; the loop additionally guards against any other
+      # writer to the branch.
+      - name: Append record and push
+        if: steps.download.outcome == 'success'
+        working-directory: metrics-branch
+        run: |
+          set -euo pipefail
+          RECORD="$(cat "$GITHUB_WORKSPACE/run-metrics/run-metrics.ndjson")"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin metrics
+            git reset --hard origin/metrics
+            printf '%s\n' "$RECORD" >> runs.ndjson
+            git add runs.ndjson
+            git commit -m "metrics: append run ${{ github.event.workflow_run.id }}"
+            if git push origin HEAD:metrics; then
+              echo "Appended one record and pushed (attempt $attempt)."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); re-fetching and retrying."
+            sleep "$((attempt * 2))"
+          done
+          echo "Failed to append after 5 attempts." >&2
+          exit 1
