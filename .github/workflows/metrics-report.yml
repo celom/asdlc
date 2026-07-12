@@ -1,0 +1,85 @@
+name: Metrics Report
+
+# Aggregates metrics:runs.ndjson into a markdown report: total/mean cost, mean
+# turns, mean duration, run counts per workflow, and the first-pass success rate
+# over merged agent PRs. Renders the report to the job summary and commits it as
+# report.md on the metrics branch. Runs on demand and weekly.
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays at 08:00 UTC.
+    - cron: '0 8 * * 1'
+
+# Serialize with the collector's appends: this workflow also pushes to the
+# single-file metrics branch, so it shares the append group to avoid colliding
+# with an in-flight record append.
+concurrency:
+  group: metrics-append
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions:
+      # Push report.md to the unprotected metrics branch. A plain GITHUB_TOKEN is
+      # right here, same as the collector: pushes to metrics trigger nothing
+      # downstream. The token also authenticates the gh API reads for first-pass.
+      contents: write
+    steps:
+      # The default-branch checkout carries the report script.
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # The metrics branch, checked out alongside, carries runs.ndjson (the
+      # collector's output) and receives report.md.
+      - name: Checkout metrics branch
+        uses: actions/checkout@v4
+        with:
+          ref: metrics
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: metrics-branch
+
+      - name: Generate report
+        env:
+          # gh (invoked by report.ts for the first-pass rate) authenticates with
+          # the job's GITHUB_TOKEN; GITHUB_REPOSITORY is set by the runner.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # First report may run before the collector has created runs.ndjson.
+          [ -f metrics-branch/runs.ndjson ] || : > metrics-branch/runs.ndjson
+          bun scripts/metrics/report.ts metrics-branch/runs.ndjson > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Commit report.md onto metrics with the collector's fetch–rebase–retry
+      # loop: each attempt re-fetches the tip, resets onto it, re-writes the file
+      # (so exactly one report.md change lands on top of the latest state),
+      # commits, and pushes; on a rejected push it retries.
+      - name: Commit report to metrics branch
+        working-directory: metrics-branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin metrics
+            git reset --hard origin/metrics
+            cp "$GITHUB_WORKSPACE/report.md" report.md
+            git add report.md
+            if git diff --cached --quiet; then
+              echo "report.md unchanged; nothing to commit."
+              exit 0
+            fi
+            git commit -m "metrics: update report (run ${{ github.run_id }})"
+            if git push origin HEAD:metrics; then
+              echo "Updated report.md and pushed (attempt $attempt)."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); re-fetching and retrying."
+            sleep "$((attempt * 2))"
+          done
+          echo "Failed to update report after 5 attempts." >&2
+          exit 1
