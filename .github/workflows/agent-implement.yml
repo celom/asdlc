@@ -58,6 +58,11 @@ jobs:
                - AI disclosure: check "AI-generated"; leave "reviewed by a human"
                  unchecked — the human reviewer checks it.
             6. Comment on the issue with a link to the PR.
+          # Surface the per-turn transcript so a failed implement run is
+          # diagnosable instead of blind: #17's runs ended is_error: true with
+          # only config + init + result in the log (run 29210573102). A public
+          # repo's diffs land in public PRs anyway, so this exposes nothing new.
+          show_full_output: true
           # Custom prompts run default-deny: allowlist what implementation needs.
           # Note the Bash scoping is hygiene, not a sandbox — running the
           # toolchain (bun) is arbitrary code execution by construction. The
