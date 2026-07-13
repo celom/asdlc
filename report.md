@@ -1,23 +1,23 @@
 # Agent run metrics
 
-_Generated 2026-07-13T07:27:04.469Z._
+_Generated 2026-07-13T09:13:54.589Z._
 
 ## Aggregates
 
 | Metric | Value |
 | --- | --- |
-| Total runs | 4 |
-| Total cost (USD) | 5.8770 |
-| Mean cost (USD) | 1.4692 |
-| Mean turns | 34.0 |
-| Mean duration (ms) | 274,495 |
+| Total runs | 7 |
+| Total cost (USD) | 10.7188 |
+| Mean cost (USD) | 1.5313 |
+| Mean turns | 37.6 |
+| Mean duration (ms) | 297,723 |
 
 ## Runs per workflow
 
 | Workflow | Runs |
 | --- | --- |
-| Agent Implement | 2 |
-| Agent Review | 2 |
+| Agent Implement | 4 |
+| Agent Review | 3 |
 
 ## First-pass success rate
 
@@ -25,8 +25,8 @@ _Generated 2026-07-13T07:27:04.469Z._
 
 | Metric | Value |
 | --- | --- |
-| Merged agent PRs | 9 |
-| Reviewed | 9 |
-| First-pass | 8 |
-| First-pass rate | 88.9% |
+| Merged agent PRs | 10 |
+| Reviewed | 10 |
+| First-pass | 9 |
+| First-pass rate | 90.0% |
 
