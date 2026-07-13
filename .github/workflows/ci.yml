@@ -12,11 +12,32 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Pinned gitleaks release for the secret scan below. Keep this in lockstep
+  # with GITLEAKS_VERSION in .github/workflows/agent-implement.yml.
+  GITLEAKS_VERSION: 8.29.1
+
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 gives gitleaks the full history, so a secret introduced
+      # in an intermediate PR commit is caught even if a later commit removes it.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Secret-scanning guardrail. Runs inside `checks` (the required status
+      # check) so branch protection needs no separate context. Downloads a
+      # pinned gitleaks binary rather than the licensed gitleaks-action, and
+      # scans the full git history via `gitleaks git`. Placed before the
+      # toolchain so a leak fails fast. .gitleaks.toml carries the allowlist.
+      - name: Secret scan (gitleaks)
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          /tmp/gitleaks git --no-banner --redact
 
       - uses: oven-sh/setup-bun@v2
         with:

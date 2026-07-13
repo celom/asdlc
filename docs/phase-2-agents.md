@@ -110,6 +110,35 @@ gh api -X POST   repos/celom/asdlc/branches/main/protection/enforce_admins  # re
   requires triage/write access.
 - There is no monthly cap; run-cost metrics are a Phase 3 item.
 
+## Secret scanning (gitleaks)
+
+A [gitleaks](https://github.com/gitleaks/gitleaks) guardrail scans for committed
+secrets in two places, both using the same pinned version (`GITLEAKS_VERSION`,
+kept in lockstep across the two workflows) and the repo-root
+[`.gitleaks.toml`](../.gitleaks.toml) allowlist:
+
+- **CI (`ci.yml`)** — a step inside the required `checks` job checks out the full
+  history (`fetch-depth: 0`) and runs `gitleaks git --no-banner --redact`, so a
+  secret in any intermediate PR commit is caught even if a later commit removes
+  it. Living inside `checks` means branch protection needs no new required check.
+- **`agent-implement.yml`** — the same pinned binary is installed on the runner
+  and the agent's verify step runs the scan before pushing, so a leak fails
+  before a billed review cycle.
+
+A pinned binary download is used instead of `gitleaks/gitleaks-action` so template
+consumers avoid that action's org-licensing setup step.
+
+Run it locally the same way CI does:
+
+```sh
+brew install gitleaks          # or: see github.com/gitleaks/gitleaks releases
+gitleaks git --no-banner --redact   # scans full history against .gitleaks.toml
+```
+
+When a legitimate secret-shaped string (e.g. a test fixture or doc example) trips
+a rule, add an entry to the `[allowlist]` section of `.gitleaks.toml` rather than
+sprinkling inline `gitleaks:allow` comments.
+
 ## Known limitations
 
 - **Fork PRs**: secrets are not available to `pull_request` runs from forks, so the
