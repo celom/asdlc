@@ -10,6 +10,12 @@ concurrency:
   group: agent-implement-${{ github.event.issue.number }}
   cancel-in-progress: false
 
+env:
+  # Pinned gitleaks release installed on the runner for the pre-push secret
+  # scan. Keep this in lockstep with GITLEAKS_VERSION in
+  # .github/workflows/ci.yml.
+  GITLEAKS_VERSION: 8.29.1
+
 jobs:
   implement:
     if: github.event.label.name == 'agent:implement'
@@ -35,6 +41,18 @@ jobs:
         with:
           bun-version: latest
 
+      # Install the pinned gitleaks binary so the agent's verify step can run
+      # the secret scan before pushing — catching a leak before a billed review
+      # cycle. Installed here (plain shell) rather than by the agent: the
+      # runner's Claude tool allowlist has no curl/tar, and this is the same
+      # scan `checks` runs, using the same pinned version and .gitleaks.toml.
+      - name: Install gitleaks
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          sudo tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks
+          gitleaks version
+
       - uses: anthropics/claude-code-action@v1
         id: claude
         with:
@@ -49,7 +67,7 @@ jobs:
             2. Create a branch named agent/issue-${{ github.event.issue.number }}-<slug>.
             3. Implement the change with tests, following existing patterns.
             4. Verify before pushing:
-               bun install --frozen-lockfile && bun run format:check && bun run typecheck && bun run test && bun run build
+               bun install --frozen-lockfile && bun run format:check && bun run typecheck && bun run test && bun run build && gitleaks git --no-banner --redact
             5. Open a PR whose body follows .github/pull_request_template.md exactly:
                - "Closes #${{ github.event.issue.number }}" in the linked issue section.
                - Copy the acceptance criteria from the issue verbatim as checkboxes
@@ -73,7 +91,7 @@ jobs:
           # denials, so the cap rose to 60 and common non-destructive utilities
           # were added.
           claude_args: |
-            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(bunx:*),Bash(node:*)"
+            --allowedTools "Edit,Write,Read,Grep,Glob,Bash(bun:*),Bash(git:*),Bash(gitleaks:*),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr view:*),Bash(ls:*),Bash(cat:*),Bash(mkdir:*),Bash(mv:*),Bash(cp:*),Bash(bunx:*),Bash(node:*)"
             --max-turns 60
 
       # Metrics are observability, never a gate: this post-step is fail-soft and

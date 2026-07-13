@@ -1,0 +1,20 @@
+# gitleaks configuration — https://github.com/gitleaks/gitleaks
+#
+# Extends gitleaks' bundled default ruleset (the standard secret detectors) and
+# layers a repo-specific allowlist on top. The allowlist is intentionally
+# minimal today; add entries here (not inline `gitleaks:allow` comments) when a
+# test fixture or doc example legitimately contains a secret-shaped string —
+# e.g. the planted dummy keys the evals/metrics tasks may introduce.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "asdlc repo-specific allowlist"
+
+# Reserve a fixtures location for files that intentionally embed fake,
+# secret-shaped strings (none exist yet). Fixtures for the evals/metrics tasks
+# go here so their planted dummies don't fail the scan; real source must not.
+# gitleaks requires an allowlist to declare at least one check, so this doubles
+# as that anchor. Add `regexes`/`stopwords` here as other exceptions arise.
+paths = ['''(^|/)tests/fixtures/gitleaks/''']
