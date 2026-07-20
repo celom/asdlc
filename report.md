@@ -1,6 +1,6 @@
 # Agent run metrics
 
-_Generated 2026-07-13T09:13:54.589Z._
+_Generated 2026-07-20T09:10:52.519Z._
 
 ## Aggregates
 
